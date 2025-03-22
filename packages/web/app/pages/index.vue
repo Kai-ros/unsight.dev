@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
 
-const { data: allowedRepos, refresh } = useRepos()
+const { data: allowedRepos, refresh, status } = useRepos()
 
 const installationURL = `https://github.com/apps/${config.public.github.appSlug}/installations/new`
 
@@ -22,11 +22,20 @@ if (import.meta.client && isCallback.value) {
   })
 }
 
+const isLoading = computed(() => status.value === 'pending' || status.value === 'idle') 
+// const isLoading = computed(() => true) 
+// console.log('isLoading', isLoading.value)
+// console.log('installationURL', installationURL)
+// console.log('isCallback', isCallback.value)
+
 const repos = computed(() => allowedRepos.value.filter(r => r.issuesIndexed > 10))
 </script>
 
 <template>
-  <section class="flex flex-col items-center flex-grow gap-24">
+  <section v-if="isLoading" class="grid place-items-center min-h-screen">
+    <LoadingEllipsis />
+  </section>
+  <section v-else class="flex flex-col items-center flex-grow gap-24">
     <section class="flex flex-col items-center gap-4 md:gap-8">
       <p class="text-xl md:text-2xl lg:text-3xl mb-8 text-center mt-18 md:mt-36">
         cluster issues by similarity across multiple repositories
@@ -53,8 +62,9 @@ const repos = computed(() => allowedRepos.value.filter(r => r.issuesIndexed > 10
       or pick a repository to browse issue clusters
       <ul class="p-0 flex flex-row flex-wrap gap-x-4 gap-y-3 justify-center md:px-10 my-4 text-sm md:text-base">
         <li
-          v-for="repo in repos"
+          v-for="(repo, index) in repos"
           :key="repo.repo"
+          :style="{ '--section-index': index }" 
           class="list-none"
         >
           <NuxtLink
